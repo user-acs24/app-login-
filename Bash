@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo
-printf "%-20s %-6s %-15s %s\n" "HOST" "PORT" "STATUS" "BANNER"
+printf "%-20s %-6s %-10s %s\n" "HOST" "PORT" "STATUS" "BANNER"
 echo "-------------------------------------------------------------------------------"
 
 while read -r line; do
@@ -10,40 +10,41 @@ while read -r line; do
     host="${line%%:*}"
     port="${line##*:}"
 
-    # PowerShell TCP connect + banner
-    result=$(powershell -Command "
-    try {
-        \$client = New-Object System.Net.Sockets.TcpClient
-        \$client.Connect('$host',$port)
-        \$stream = \$client.GetStream()
+    result=$(powershell -NoProfile -Command "
+param([string]\$h,[int]\$p)
 
-        if ($port -eq 22) {
-            \$reader = New-Object System.IO.StreamReader(\$stream)
-            \$banner = \$reader.ReadLine()
-            'OPEN|' + \$banner
-        }
-        elseif ($port -eq 80 -or $port -eq 8080) {
-            \$writer = New-Object System.IO.StreamWriter(\$stream)
-            \$writer.Write(\"GET / HTTP/1.1`r`nHost: $host`r`nConnection: close`r`n`r`n\")
-            \$writer.Flush()
-            \$reader = New-Object System.IO.StreamReader(\$stream)
-            \$banner = \$reader.ReadLine()
-            'OPEN|' + \$banner
-        }
-        else {
-            'OPEN|No banner'
-        }
+try {
+    \$client = New-Object System.Net.Sockets.TcpClient
+    \$client.Connect(\$h,\$p)
+    \$stream = \$client.GetStream()
 
-        \$client.Close()
+    if (\$p -eq 22) {
+        \$reader = New-Object System.IO.StreamReader(\$stream)
+        \$banner = \$reader.ReadLine()
+        Write-Output \"OPEN|\$banner\"
     }
-    catch {
-        'CLOSED|'
+    elseif (\$p -eq 80 -or \$p -eq 8080) {
+        \$writer = New-Object System.IO.StreamWriter(\$stream)
+        \$writer.Write(\"GET / HTTP/1.1`r`nHost: \$h`r`nConnection: close`r`n`r`n\")
+        \$writer.Flush()
+        \$reader = New-Object System.IO.StreamReader(\$stream)
+        \$line = \$reader.ReadLine()
+        Write-Output \"OPEN|\$line\"
     }
-    ")
+    else {
+        Write-Output \"OPEN|No banner\"
+    }
+
+    \$client.Close()
+}
+catch {
+    Write-Output \"CLOSED|\"
+}
+" -Args "$host","$port")
 
     status="${result%%|*}"
     banner="${result#*|}"
 
-    printf "%-20s %-6s %-15s %s\n" "$host" "$port" "$status" "$banner"
+    printf "%-20s %-6s %-10s %s\n" "$host" "$port" "$status" "$banner"
 
 done < targets.txt
