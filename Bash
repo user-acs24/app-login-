@@ -2,25 +2,19 @@
 
 TIMEOUT=5
 
-resolve_host() {
-    local host="$1"
-    getent hosts "$host" | awk '{ print $1 }' | head -n 1
-}
-
 grab_banner() {
     local host="$1"
     local port="$2"
 
-    # Open TCP connection
-    exec 3<>/dev/tcp/"$host"/"$port" || return
+    exec 3<>/dev/tcp/"$host"/"$port" || return 1
 
-    # SSH banner (sent immediately)
+    # SSH banner
     if [[ "$port" -eq 22 ]]; then
         read -t $TIMEOUT banner <&3
         echo "$banner"
         exec 3<&-
         exec 3>&-
-        return
+        return 0
     fi
 
     # HTTP banner
@@ -32,7 +26,7 @@ grab_banner() {
         done
         exec 3<&-
         exec 3>&-
-        return
+        return 0
     fi
 
     echo "No banner (protocol-specific)"
@@ -42,7 +36,7 @@ grab_banner() {
 
 echo
 echo -e "HOST\t\tPORT\tSTATUS\t\tBANNER"
-echo "--------------------------------------------------------------------------------------------------------"
+echo "----------------------------------------------------------------------------------------------------"
 
 while read -r line; do
     [[ -z "$line" || "$line" != *:* ]] && continue
@@ -50,13 +44,6 @@ while read -r line; do
     host="${line%%:*}"
     port="${line##*:}"
 
-    ip=$(resolve_host "$host")
-    if [[ -z "$ip" ]]; then
-        echo -e "$host\t$port\tERROR\t\tDNS failed"
-        continue
-    fi
-
-    # Test TCP connect
     timeout $TIMEOUT bash -c ">/dev/tcp/$host/$port" 2>/dev/null
     if [[ $? -eq 0 ]]; then
         banner=$(grab_banner "$host" "$port")
@@ -67,6 +54,3 @@ while read -r line; do
     fi
 
 done < targets.txt
-
-chmod +x banner_grab.sh
-./banner_grab.sh
