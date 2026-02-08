@@ -1,0 +1,72 @@
+#!/bin/bash
+
+TIMEOUT=5
+
+resolve_host() {
+    local host="$1"
+    getent hosts "$host" | awk '{ print $1 }' | head -n 1
+}
+
+grab_banner() {
+    local host="$1"
+    local port="$2"
+
+    # Open TCP connection
+    exec 3<>/dev/tcp/"$host"/"$port" || return
+
+    # SSH banner (sent immediately)
+    if [[ "$port" -eq 22 ]]; then
+        read -t $TIMEOUT banner <&3
+        echo "$banner"
+        exec 3<&-
+        exec 3>&-
+        return
+    fi
+
+    # HTTP banner
+    if [[ "$port" -eq 80 || "$port" -eq 8080 ]]; then
+        echo -e "GET / HTTP/1.1\r\nHost: $host\r\nConnection: close\r\n\r\n" >&3
+        while read -r line <&3; do
+            [[ -z "$line" ]] && break
+            echo "$line"
+        done
+        exec 3<&-
+        exec 3>&-
+        return
+    fi
+
+    echo "No banner (protocol-specific)"
+    exec 3<&-
+    exec 3>&-
+}
+
+echo
+echo -e "HOST\t\tPORT\tSTATUS\t\tBANNER"
+echo "--------------------------------------------------------------------------------------------------------"
+
+while read -r line; do
+    [[ -z "$line" || "$line" != *:* ]] && continue
+
+    host="${line%%:*}"
+    port="${line##*:}"
+
+    ip=$(resolve_host "$host")
+    if [[ -z "$ip" ]]; then
+        echo -e "$host\t$port\tERROR\t\tDNS failed"
+        continue
+    fi
+
+    # Test TCP connect
+    timeout $TIMEOUT bash -c ">/dev/tcp/$host/$port" 2>/dev/null
+    if [[ $? -eq 0 ]]; then
+        banner=$(grab_banner "$host" "$port")
+        [[ -z "$banner" ]] && banner="(no banner)"
+        echo -e "$host\t$port\tOPEN\t\t$banner"
+    else
+        echo -e "$host\t$port\tCLOSED/FILTERED\t-"
+    fi
+
+done < targets.txt
+
+chmod +x banner_grab.sh
+./banner_grab.sh
