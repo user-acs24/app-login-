@@ -1,15 +1,8 @@
-
 import socket
 
-
-# ---------- DNS / IP RESOLUTION ----------
 def resolve_host(host):
-    """
-    If input is a hostname, resolve it to IP.
-    If input is already an IP, return it as-is.
-    """
     try:
-        socket.inet_aton(host)   # check if valid IP
+        socket.inet_aton(host)
         return host
     except:
         try:
@@ -18,32 +11,34 @@ def resolve_host(host):
             return None
 
 
-# ---------- BANNER GRABBING ----------
 def grab_banner(sock, port, host):
     try:
-        # SSH sends banner automatically
-        if port == 22:
-            return sock.recv(1024).decode(errors="ignore").strip()
-
-        # HTTP requires a proper request
-        if port == 80:
+        if port in (80, 8080):
             request = (
                 f"GET / HTTP/1.1\r\n"
                 f"Host: {host}\r\n"
                 f"Connection: close\r\n\r\n"
             )
             sock.sendall(request.encode())
-            data = sock.recv(2048).decode(errors="ignore")
-            return data.split("\r\n")[0]
 
-        # Other services usually do not expose banners
+            response = b""
+            while True:
+                data = sock.recv(1024)
+                if not data:
+                    break
+                response += data
+
+            return response.decode(errors="ignore").split("\r\n\r\n")[0]
+
+        if port == 22:
+            return sock.recv(1024).decode(errors="ignore").strip()
+
         return "No banner (protocol-specific)"
 
     except:
         return "Banner grab failed"
 
 
-# ---------- TCP CONNECT ----------
 def tcp_connect(host, port, timeout=5):
     try:
         ip = resolve_host(host)
@@ -53,9 +48,7 @@ def tcp_connect(host, port, timeout=5):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
 
-        result = sock.connect_ex((ip, port))
-
-        if result == 0:
+        if sock.connect_ex((ip, port)) == 0:
             banner = grab_banner(sock, port, host)
             status = "OPEN"
         else:
@@ -69,27 +62,17 @@ def tcp_connect(host, port, timeout=5):
         return "ERROR", str(e)
 
 
-# ---------- MAIN ----------
-print("\nHOST / IP\t\tPORT\tSTATUS\t\tBANNER")
+print("\nHOST\t\tPORT\tSTATUS\t\tBANNER")
 print("-" * 100)
 
 with open("targets.txt") as f:
     for line in f:
         line = line.strip()
-
-        if not line:
+        if not line or ":" not in line:
             continue
 
-        if ":" not in line:
-            print(f"Invalid format: {line}")
-            continue
-
-        try:
-            host, port = line.split(":")
-            port = int(port)
-        except:
-            print(f"Invalid format: {line}")
-            continue
+        host, port = line.split(":")
+        port = int(port)
 
         status, banner = tcp_connect(host, port)
         print(f"{host}\t{port}\t{status}\t{banner}")
