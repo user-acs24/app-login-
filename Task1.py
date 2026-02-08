@@ -1,5 +1,6 @@
 import socket
 
+
 def resolve_host(host):
     try:
         socket.inet_aton(host)
@@ -13,6 +14,11 @@ def resolve_host(host):
 
 def grab_banner(sock, port, host):
     try:
+        # SSH banner (sent immediately by server)
+        if port == 22:
+            return sock.recv(1024).decode(errors="ignore").strip()
+
+        # HTTP banner (needs request + full read)
         if port in (80, 8080):
             request = (
                 f"GET / HTTP/1.1\r\n"
@@ -28,10 +34,9 @@ def grab_banner(sock, port, host):
                     break
                 response += data
 
-            return response.decode(errors="ignore").split("\r\n\r\n")[0]
-
-        if port == 22:
-            return sock.recv(1024).decode(errors="ignore").strip()
+            text = response.decode(errors="ignore")
+            headers = text.split("\r\n\r\n")[0]
+            return headers
 
         return "No banner (protocol-specific)"
 
@@ -62,8 +67,9 @@ def tcp_connect(host, port, timeout=5):
         return "ERROR", str(e)
 
 
+# ---------------- MAIN ----------------
 print("\nHOST\t\tPORT\tSTATUS\t\tBANNER")
-print("-" * 100)
+print("-" * 110)
 
 with open("targets.txt") as f:
     for line in f:
