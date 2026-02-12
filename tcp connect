@@ -1,0 +1,125 @@
+import socket
+import ssl
+import csv
+
+TIMEOUT = 3
+BUFFER = 4096
+
+
+# ---------------- DNS RESOLUTION ----------------
+def resolve_host(host):
+    try:
+        socket.inet_aton(host)  # If already IP
+        return host
+    except OSError:
+        try:
+            return socket.gethostbyname(host)
+        except socket.gaierror:
+            return None
+
+
+# ---------------- READ DATA ----------------
+def read_data(sock):
+    sock.settimeout(2)
+    data = b""
+    try:
+        while True:
+            chunk = sock.recv(BUFFER)
+            if not chunk:
+                break
+            data += chunk
+    except socket.timeout:
+        pass
+    return data
+
+
+# ---------------- SCAN FUNCTION ----------------
+def scan(host, port):
+    ip = resolve_host(host)
+    if not ip:
+        return host, port, "ERROR", "DNS resolution failed"
+
+    sock = None
+
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(TIMEOUT)
+
+        result = sock.connect_ex((ip, port))
+
+        if result != 0:
+            return host, port, "CLOSED", ""
+
+        status = "OPEN"
+        banner = ""
+
+        # -------- SSH --------
+        if port == 22:
+            banner = sock.recv(1024).decode(errors="ignore").strip()
+
+        # -------- SSL/TLS --------
+        elif port in (443, 465, 993, 995):
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+
+            with context.wrap_socket(sock, server_hostname=host) as ssock:
+                banner = f"TLS Version: {ssock.version()}"
+
+        # -------- HTTP --------
+        elif port in (80, 8080, 3000):
+            request = (
+                f"GET / HTTP/1.1\r\n"
+                f"Host: {host}\r\n"
+                f"Connection: close\r\n\r\n"
+            )
+            sock.sendall(request.encode())
+            data = read_data(sock)
+            banner = data.decode(errors="ignore").split("\r\n\r\n")[0]
+
+        # -------- REDIS --------
+        elif port == 6379:
+            sock.sendall(b"INFO\r\n")
+            data = read_data(sock)
+            banner = data.decode(errors="ignore").split("\r\n\r\n")[0]
+
+        # -------- GENERIC --------
+        else:
+            data = read_data(sock)
+            banner = data.decode(errors="ignore")[:200]
+
+        return host, port, status, banner
+
+    except socket.timeout:
+        return host, port, "FILTERED", ""
+
+    except Exception as e:
+        return host, port, "ERROR", str(e)
+
+    finally:
+        if sock:
+            sock.close()
+
+
+# ---------------- MAIN ----------------
+
+results = []
+
+with open("targets.txt") as f:
+    for line in f:
+        line = line.strip()
+        if not line or ":" not in line:
+            continue
+
+        host, port = line.split(":")
+        result = scan(host.strip(), int(port.strip()))
+        results.append(result)
+
+
+# Save CSV
+with open("results.csv", "w", newline="", encoding="utf-8") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Host", "Port", "Status", "Banner"])
+    writer.writerows(results)
+
+print("Scan complete. Results saved to results.csv")
