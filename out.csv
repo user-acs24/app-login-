@@ -1,0 +1,79 @@
+Host,Port,Status,Banner
+google.com,443,CLOSED,
+github.com,443,OPEN,TLS Version: TLSv1.3
+microsoft.com,443,OPEN,TLS Version: TLSv1.3
+example.com,80,OPEN,"HTTP/1.1 200 OK
+Date: Thu, 12 Feb 2026 09:46:32 GMT
+Content-Type: text/html
+Transfer-Encoding: chunked
+Connection: close
+CF-RAY: 9ccb28d31e9a58c9-MAA
+Last-Modified: Wed, 11 Feb 2026 23:52:48 GMT
+Allow: GET, HEAD
+Accept-Ranges: bytes
+Age: 2762
+cf-cache-status: HIT
+Server: cloudflare"
+neverssl.com,80,CLOSED,
+127.0.0.1,22,CLOSED,
+127.0.0.1,6379,OPEN,"$6511
+# Server
+redis_version:8.6.0
+redis_git_sha1:00000000
+redis_git_dirty:1
+redis_build_id:a7d515010e105f80
+redis_mode:standalone
+os:Linux 6.6.87.2-microsoft-standard-WSL2 x86_64
+arch_bits:64
+monotonic_clock:POSIX clock_gettime
+multiplexing_api:epoll
+atomicvar_api:c11-builtin
+gcc_version:14.2.0
+process_id:1
+process_supervised:no
+run_id:f28256ad3e2265d87d858ca7c50e4c1d8fc9a47b
+tcp_port:6379
+server_time_usec:1770889598335321
+uptime_in_seconds:15897
+uptime_in_days:0
+hz:10
+configured_hz:10
+lru_clock:9281918
+executable:/data/redis-server
+config_file:
+io_threads_active:0
+listener0:name=tcp,bind=*,bind=-::*,port=6379"
+gmail.com,993,CLOSED,
+gmail.com,995,CLOSED,
+smtp.gmail.com,465,OPEN,TLS Version: TLSv1.3
+google.com,81,CLOSED,
+127.0.0.1,3000,OPEN,"HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Feature-Policy: payment 'self'
+X-Recruiting: /#/jobs
+Accept-Ranges: bytes
+Cache-Control: public, max-age=0
+Last-Modified: Thu, 12 Feb 2026 06:45:27 GMT
+ETag: W/""1252f-19c5098f702""
+Content-Type: text/html; charset=UTF-8
+Content-Length: 75055
+Vary: Accept-Encoding
+Date: Thu, 12 Feb 2026 09:46:50 GMT
+Connection: close"
+192.168.1.23,3000,OPEN,"HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Feature-Policy: payment 'self'
+X-Recruiting: /#/jobs
+Accept-Ranges: bytes
+Cache-Control: public, max-age=0
+Last-Modified: Thu, 12 Feb 2026 13:43:04 GMT
+ETag: W/""1252f-19c52174a6c""
+Content-Type: text/html; charset=UTF-8
+Content-Length: 75055
+Vary: Accept-Encoding
+Date: Thu, 12 Feb 2026 16:31:59 GMT
+Connection: close"
