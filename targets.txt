@@ -1,0 +1,24 @@
+# -------- HTTPS (TLS certificate) --------
+google.com:443
+github.com:443
+microsoft.com:443
+
+# -------- HTTP --------
+example.com:80
+neverssl.com:80
+
+# -------- SSH (if your VM has SSH running) --------
+127.0.0.1:22
+
+# -------- Redis (only works if Redis is running locally) --------
+127.0.0.1:6379
+
+# -------- Common secure mail ports (TLS) --------
+gmail.com:993
+gmail.com:995
+smtp.gmail.com:465
+
+# -------- Closed port example --------
+google.com:81
+127.0.0.1:3000
+192.168.1.23:3000
