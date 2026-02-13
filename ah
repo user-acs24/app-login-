@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONNECT_TIMEOUT=3
+READ_TIMEOUT=5
+MAX_BYTES=2048
+INPUT="$1"
+OUTPUT="${2:-}"
+
+[[ -z "$INPUT" || ! -f "$INPUT" ]] && {
+  echo "Usage: $0 targets.txt [output.csv]"
+  exit 1
+}
+
+[[ -n "$OUTPUT" ]] && exec >"$OUTPUT"
+
+echo "target,port,status,banner"
+
+while IFS= read -r line || [[ -n "$line" ]]; do
+
+  # Clean input
+  line="${line%%#*}"
+  line="$(echo "$line" | sed 's/[,:]/ /g' | xargs)"
+  [[ -z "$line" ]] && continue
+
+  host="$(echo "$line" | awk '{print $1}')"
+  port="$(echo "$line" | awk '{print $2}')"
+
+  # Validate port
+  if ! [[ "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+    echo "$host,$port,INVALID_PORT,\"\""
+    continue
+  fi
+
+  banner=""
+  status=""
+
+  # Try TCP connection using bash built-in
+  if timeout "$CONNECT_TIMEOUT" bash -c "exec 3<>/dev/tcp/$host/$port" 2>/dev/null; then
+
+    # Try reading banner
+    banner="$(timeout "$READ_TIMEOUT" dd bs=1 count="$MAX_BYTES" 2>/dev/null <&3 || true)"
+
+    exec 3>&- 2>/dev/null || true
+
+    status="OPEN"
+
+  else
+    status="CLOSED_OR_FILTERED"
+  fi
+
+  # Clean banner for CSV
+  banner="${banner//$'\r'/}"
+  banner="${banner//$'\n'/\\n}"
+  banner="${banner//\"/\"\"}"
+
+  printf "%s,%s,%s,\"%s\"\n" "$host" "$port" "$status" "$banner"
+
+done < "$INPUT"
