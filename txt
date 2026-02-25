@@ -1,0 +1,242 @@
+1. Sudo Misconfiguration – Privilege Escalation
+Field	Content
+Vulnerability ID	VULN-01
+Vulnerability Name	Sudo NOPASSWD Privilege Escalation
+Severity	Critical
+CVSS	9.8 (High impact local privilege escalation)
+Affected Component	/etc/sudoers configuration
+How Vulnerability Occurs	User “daniel” is allowed to execute /usr/bin/vim as root without password authentication.
+Why It Occurs	Misconfigured sudoers file granting excessive privileges.
+Exploitation Requirements	Valid local account with sudo rights.
+Does It Meet Exploitation Requirements?	Yes
+High-Level Exploitation Method	Abuse allowed sudo command to spawn a root shell using vim’s shell escape functionality.
+Impact (CIA)	Full compromise of Confidentiality, Integrity, Availability
+Business Risk	Complete system takeover by authenticated attacker.
+Remediation	Remove NOPASSWD directive; restrict sudo commands; apply principle of least privilege.
+Validation Method	Run sudo -l and verify restricted privileges.
+🔴 2. Writable Cron-Executed Python Script
+Field	Content
+Vulnerability ID	VULN-02
+Vulnerability Name	Insecure File Permission – Writable Scheduled Script
+Severity	High
+CVSS	8.8
+Affected Component	query.py
+How Vulnerability Occurs	Python script executed every 2 minutes is writable by group “administrators.”
+Why It Occurs	Improper file permission configuration.
+Exploitation Requirements	User membership in administrators group.
+Does It Meet Exploitation Requirements?	Yes
+High-Level Exploitation Method	Modify script to execute malicious commands that run in higher privilege context.
+Impact (CIA)	Privilege escalation; code execution
+Business Risk	Persistent root-level access and system compromise.
+Remediation	Restrict file permissions to root-only (chmod 750 or stricter).
+Validation Method	Check file ownership and permission using ls -l.
+🟠 3. Outdated Ubuntu Packages
+Field	Content
+Vulnerability ID	VULN-03
+Vulnerability Name	Multiple Outdated System Packages
+Severity	High
+CVSS	Varies
+Affected Component	Ubuntu OS packages
+How Vulnerability Occurs	Installed packages contain known CVEs.
+Why It Occurs	System not patched regularly.
+Exploitation Requirements	Remote or local access depending on vulnerability.
+Does It Meet Exploitation Requirements?	Potentially
+High-Level Exploitation Method	Exploit known CVEs affecting installed services.
+Impact (CIA)	Remote code execution, denial of service, data exposure
+Business Risk	Increased attack surface.
+Remediation	Run apt update && apt upgrade; implement patch management policy.
+Validation Method	Compare package versions with vendor security advisories.
+🟠 4. Apache Version Disclosure
+Field	Content
+Vulnerability ID	VULN-04
+Vulnerability Name	Web Server Version Disclosure
+Severity	Medium
+CVSS	5.3
+Affected Component	Apache HTTP Server
+How Vulnerability Occurs	Server header reveals Apache version.
+Why It Occurs	Default Apache configuration.
+Exploitation Requirements	Network access to port 80.
+Does It Meet Exploitation Requirements?	Yes
+High-Level Exploitation Method	Use disclosed version to identify targeted exploits.
+Impact (CIA)	Facilitates targeted attack planning
+Business Risk	Easier exploitation of known vulnerabilities
+Remediation	Disable server tokens; hide version info.
+Validation Method	Check HTTP response headers.
+🟡 5. SSH Password Authentication Enabled
+Field	Content
+Vulnerability ID	VULN-05
+Vulnerability Name	SSH Weak Authentication Configuration
+Severity	Medium
+CVSS	5.8
+Affected Component	SSH service
+How Vulnerability Occurs	Password-based authentication enabled.
+Why It Occurs	Default SSH configuration.
+Exploitation Requirements	Valid credentials or brute force attempt.
+Does It Meet Exploitation Requirements?	Yes
+High-Level Exploitation Method	Credential reuse attack.
+Impact (CIA)	Unauthorized access
+Business Risk	Increased likelihood of compromise.
+Remediation	Disable password authentication; use key-based login.
+Validation Method	Check sshd_config.
+✅ Important: For Tab Nabbing
+
+Nessus will NOT detect Tab Nabbing because:
+
+It is a web application logic vulnerability
+
+Requires manual testing
+
+Modern browsers mitigate it
+
+You should add it manually in Excel:
+
+🔴 6. Tab Nabbing Phishing Vulnerability (Manual Finding)
+Field	Content
+Vulnerability ID	VULN-06
+Vulnerability Name	Tab Nabbing Phishing Attack
+Severity	High
+CVSS	7.4
+Affected Component	Web Application
+How Vulnerability Occurs	External links open in new tab without rel="noopener noreferrer".
+Why It Occurs	Improper link handling in HTML anchor tags.
+Exploitation Requirements	Admin must click malicious link.
+Does It Meet Exploitation Requirements?	Yes
+High-Level Exploitation Method	Redirect original tab to fake login page to harvest credentials.
+Impact (CIA)	Credential theft; unauthorized SSH access
+Business Risk	Full attack chain leading to root compromise
+Remediation	Add rel="noopener noreferrer" to external links.
+Validation Method	Review HTML source code.
+
+SHEET 1 — Vulnerability Register
+
+Create these columns:
+
+| Vuln ID | Vulnerability Name | Severity | Category | Affected Component | How It Occurs | Why It Occurs (Root Cause) | Exploitation Requirements | Meets Exploit Requirements? | High-Level Exploitation Method | Access Gained | Impact | Remediation |
+
+🔴 VULN-01 — Tab Nabbing Phishing
+Field	Content
+Vuln ID	VULN-01
+Vulnerability Name	Tab Nabbing (Phishing via window.opener)
+Severity	High
+Category	Web Application
+Affected Component	Blog external link functionality
+How It Occurs	External links open in new tab without rel="noopener noreferrer", allowing manipulation of original tab.
+Why It Occurs	Insecure HTML anchor implementation.
+Exploitation Requirements	Admin must click submitted link.
+Meets Exploit Requirements?	Yes
+High-Level Exploitation Method	Redirect original tab to fake login page to harvest credentials.
+Access Gained	Admin credentials
+Impact	Credential compromise, unauthorized access
+Remediation	Add rel="noopener noreferrer"; implement anti-phishing protections
+🔴 VULN-02 — Credential Reuse
+Field	Content
+Vuln ID	VULN-02
+Vulnerability Name	Credential Reuse Across Services
+Severity	High
+Category	Authentication Weakness
+Affected Component	SSH Service
+How It Occurs	Same password used for web login and SSH login.
+Why It Occurs	Poor credential management policy.
+Exploitation Requirements	Stolen credentials.
+Meets Exploit Requirements?	Yes
+High-Level Exploitation Method	Use harvested credentials to authenticate via SSH.
+Access Gained	Remote shell (daniel user)
+Impact	Unauthorized system access
+Remediation	Enforce unique passwords; implement MFA
+🔴 VULN-03 — Writable Scheduled Script
+Field	Content
+Vuln ID	VULN-03
+Vulnerability Name	Writable Cron-Executed Python Script
+Severity	High
+Category	Privilege Escalation
+Affected Component	query.py
+How It Occurs	Script executed every 2 minutes is writable by administrators group.
+Why It Occurs	Incorrect file permissions.
+Exploitation Requirements	Membership in administrators group.
+Meets Exploit Requirements?	Yes
+High-Level Exploitation Method	Modify script to execute attacker-controlled commands.
+Access Gained	Reverse shell
+Impact	Arbitrary command execution
+Remediation	Restrict script to root-only write access
+🔴 VULN-04 — Reverse Shell Execution
+Field	Content
+Vuln ID	VULN-04
+Vulnerability Name	Arbitrary Code Execution via Scheduled Task
+Severity	High
+Category	Remote Code Execution
+Affected Component	Cron execution environment
+How It Occurs	Modified Python script executes malicious shell script.
+Why It Occurs	Lack of script integrity validation.
+Exploitation Requirements	Writable script + scheduled execution.
+Meets Exploit Requirements?	Yes
+High-Level Exploitation Method	Inject command to establish reverse shell.
+Access Gained	Interactive shell
+Impact	System compromise
+Remediation	Restrict permissions; implement file integrity monitoring
+🔴 VULN-05 — Sudo Misconfiguration (Root Privilege Escalation)
+Field	Content
+Vuln ID	VULN-05
+Vulnerability Name	Sudo NOPASSWD Privilege Escalation
+Severity	Critical
+Category	Privilege Escalation
+Affected Component	sudoers configuration
+How It Occurs	User allowed to execute vim as root without password.
+Why It Occurs	Misconfigured sudo policy.
+Exploitation Requirements	Local user access.
+Meets Exploit Requirements?	Yes
+High-Level Exploitation Method	Abuse vim shell escape to spawn root shell.
+Access Gained	Root
+Impact	Full system takeover
+Remediation	Remove NOPASSWD; enforce least privilege
+🟠 VULN-06 — Outdated Ubuntu Packages (Nessus Finding)
+Field	Content
+Vuln ID	VULN-06
+Vulnerability Name	Multiple Outdated System Packages
+Severity	High
+Category	Patch Management
+Affected Component	Ubuntu OS
+How It Occurs	Installed packages contain known CVEs.
+Why It Occurs	Lack of patch management.
+Exploitation Requirements	Depends on CVE.
+Meets Exploit Requirements?	Potentially
+High-Level Exploitation Method	Exploit known public vulnerabilities.
+Access Gained	Depends on vulnerability
+Impact	Increased attack surface
+Remediation	Update system packages regularly
+🟡 VULN-07 — Apache Version Disclosure
+Field	Content
+Vuln ID	VULN-07
+Vulnerability Name	Server Version Disclosure
+Severity	Medium
+Category	Information Disclosure
+Affected Component	Apache HTTP
+How It Occurs	HTTP headers reveal Apache version.
+Why It Occurs	Default configuration.
+Exploitation Requirements	Network access.
+Meets Exploit Requirements?	Yes
+High-Level Exploitation Method	Identify targeted exploits for specific version.
+Access Gained	Recon advantage
+Impact	Facilitates attack planning
+Remediation	Disable ServerTokens and ServerSignature
+✅ SHEET 2 — Attack Chain Summary (Very Important)
+
+Create columns:
+
+| Stage | Vulnerability Used | Access Level | Description | Result |
+
+Fill like this:
+
+Stage	Vulnerability Used	Access Level	Description	Result
+1	Tab Nabbing	Credential Theft	Admin tricked into entering credentials on fake page	Credentials obtained
+2	Credential Reuse	SSH Access	Reused credentials to authenticate remotely	Shell as daniel
+3	Writable Script	Code Execution	Modified cron-executed script	Reverse shell
+4	Sudo Misconfiguration	Root	Executed vim as root without password	Full root compromise
+✅ SHEET 3 — Root Compromise Summary
+
+You can add one final row:
+
+Final Impact	Full System Compromise
+Root Access Achieved	Yes
+Attack Complexity	Low once credentials obtained
+Exploit Chain Required	Yes (Multi-stage)
+Business Risk	Complete infrastructure takeover
